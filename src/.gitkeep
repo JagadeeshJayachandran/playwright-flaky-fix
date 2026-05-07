@@ -1,0 +1,10 @@
+# Placeholder
+
+This directory will hold the deliberately flaky web app being tested.
+
+To be filled in during Episode 2 production (May 9-12, 2026):
+- `dashboard.html` — single-page app with 10 categories of flakiness baked in
+- `dashboard.js` — async loaders, race conditions, and dynamic locators
+
+Ask Claude to generate these files using the prompt:
+*"Create a single-page HTML/JS dashboard that intentionally exhibits these 10 flakiness categories when tested with Playwright: [list]. Make each one realistic — like what you'd actually see in production code."*

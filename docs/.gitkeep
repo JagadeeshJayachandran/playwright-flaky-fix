@@ -1,0 +1,10 @@
+# Placeholder
+
+This directory holds architecture notes and decisions log.
+
+To create during the dry run (May 12):
+- `decisions.md` — why each flakiness category was chosen, why MCP over function-calling, why Claude as the filmed LLM
+- `prompts-used.md` — the exact prompts that worked (and the ones that didn't) — this is the unique value most AI testing tutorials hide
+- `what-broke.md` — the honest mistakes during recording, what got fixed in post
+
+Recruiters who dig into your repos read the `docs/` folder. Make it count.

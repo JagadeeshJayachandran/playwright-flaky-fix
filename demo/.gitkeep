@@ -1,0 +1,13 @@
+# Placeholder
+
+`demo.gif` (30 seconds, 800×450, <5 MB) goes here after Episode 2 is filmed.
+
+What it should show:
+- 0–5s: Empty `tests/` folder OR all 10 tests showing red ❌
+- 5–15s: Claude analyzing failures via MCP
+- 15–25s: Tests being patched in real-time
+- 25–30s: All 10 green ✅ + GitHub Actions CI badge appearing
+
+Generate via: macOS Screen Recording → trim in QuickTime → convert with ezgif.com or ffmpeg.
+
+Once recorded, save as `demo.gif` in this folder and the README image link will resolve.

@@ -1,0 +1,21 @@
+# Placeholder
+
+This directory will hold the 10 deliberately broken Playwright tests.
+
+To be filled in during Episode 2 production (May 9-12, 2026):
+
+1. `01-race-condition.spec.ts` — asserts on data before async fetch resolves
+2. `02-dynamic-locator.spec.ts` — uses an ID that changes each render
+3. `03-network-jitter.spec.ts` — assumes API response under 100ms
+4. `04-time-based.spec.ts` — `Date.now()` comparison fails near midnight
+5. `05-hover-focus.spec.ts` — hover state lost when DOM re-renders
+6. `06-modal-timing.spec.ts` — clicks the modal trigger before listener attaches
+7. `07-animation.spec.ts` — asserts on element position mid-CSS-transition
+8. `08-viewport.spec.ts` — element only visible at certain widths
+9. `09-iframe.spec.ts` — third-party iframe loads on its own timeline
+10. `10-auth-flake.spec.ts` — session token expires mid-test
+
+Each test should be ~15-25 lines, use realistic patterns (not contrived), and fail consistently when run.
+
+Ask Claude to generate these using the prompt:
+*"Generate 10 Playwright .spec.ts files, one per category above. Each should be a realistic test that fails because of that specific flakiness pattern — not because of contrived breakage. Tests should hit `http://localhost:3000` (the dashboard.html I'm about to build)."*
