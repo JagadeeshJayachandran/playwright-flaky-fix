@@ -152,7 +152,18 @@
   }
 
   function wireActionMenu() {
-    document.getElementById('user-list').addEventListener('click', (e) => {
+    const list = document.getElementById('user-list');
+
+    let hoveredRow = null;
+    document.addEventListener('mousemove', (e) => {
+      const row = e.target instanceof HTMLElement ? e.target.closest('.user-row') : null;
+      if (row === hoveredRow) return;
+      if (hoveredRow) hoveredRow.classList.remove('is-hovered');
+      hoveredRow = row;
+      if (row) row.classList.add('is-hovered');
+    });
+
+    list.addEventListener('click', (e) => {
       const target = e.target;
       if (!(target instanceof HTMLElement)) return;
       const row = target.closest('.user-row');

@@ -101,6 +101,14 @@
     .card.loaded {
       opacity: 1;
       transform: translateX(0);
+      animation: card-live-pulse 1.4s linear infinite;
+    }
+    @keyframes card-live-pulse {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(9px); }
+      50%  { transform: translateX(3px); }
+      75%  { transform: translateX(12px); }
+      100% { transform: translateX(0); }
     }
     .card .label { font-size: 12px; text-transform: uppercase; color: #7a8896; }
     .card .value { font-size: 28px; font-weight: 600; margin-top: 4px; }
@@ -150,7 +158,7 @@
       display: none;
       gap: 6px;
     }
-    .user-row:hover .action-menu { display: inline-flex; }
+    .user-row.is-hovered .action-menu { display: inline-flex; }
     .action-menu button {
       padding: 4px 10px;
       font-size: 12px;
