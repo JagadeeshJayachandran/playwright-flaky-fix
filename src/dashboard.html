@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrangeHRM-style Employee Dashboard</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f4f6fa;
+      color: #1f2933;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #fff;
+      border-bottom: 1px solid #e1e5eb;
+    }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header .header-meta { display: flex; align-items: center; gap: 16px; }
+    #countdown { font-size: 13px; color: #5b6b7c; }
+
+    .layout {
+      display: flex;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    aside.filters-sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: #fff;
+      border: 1px solid #e1e5eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    aside.filters-sidebar h3 { margin: 0 0 12px; font-size: 14px; }
+    aside.filters-sidebar button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #f4f6fa;
+      border: 1px solid #d4dae3;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    main { flex: 1; min-width: 0; }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .toolbar button {
+      padding: 8px 14px;
+      background: #2b6cb0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .toolbar button.secondary {
+      background: #fff;
+      color: #2b6cb0;
+      border: 1px solid #2b6cb0;
+    }
+
+    #status {
+      margin: 8px 0;
+      font-size: 13px;
+      color: #5b6b7c;
+      min-height: 18px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .card {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e1e5eb;
+      border-radius: 8px;
+      padding: 16px;
+      opacity: 0;
+      transform: translateX(-24px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    }
+    .card.loaded {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    .card .label { font-size: 12px; text-transform: uppercase; color: #7a8896; }
+    .card .value { font-size: 28px; font-weight: 600; margin-top: 4px; }
+
+    .search-row { margin-bottom: 12px; }
+    #search {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #d4dae3;
+      border-radius: 6px;
+    }
+
+    #user-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      background: #fff;
+      border: 1px solid #e1e5eb;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f0f2f5;
+      gap: 12px;
+    }
+    .user-row:last-child { border-bottom: none; }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #cbd5e0;
+      color: #2b6cb0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .user-info { flex: 1; min-width: 0; }
+    .user-info .name { font-weight: 500; }
+    .user-info .meta { font-size: 12px; color: #7a8896; }
+    .action-menu {
+      display: none;
+      gap: 6px;
+    }
+    .user-row:hover .action-menu { display: inline-flex; }
+    .action-menu button {
+      padding: 4px 10px;
+      font-size: 12px;
+      background: #f4f6fa;
+      border: 1px solid #d4dae3;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .iframe-wrapper {
+      margin-top: 24px;
+      background: #fff;
+      border: 1px solid #e1e5eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .iframe-wrapper h3 { margin: 0 0 12px; font-size: 14px; }
+    #analytics-iframe {
+      width: 100%;
+      height: 180px;
+      border: 1px solid #e1e5eb;
+      border-radius: 4px;
+    }
+
+    /* Modal */
+    #modal[hidden] { display: none; }
+    #modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 8px;
+      padding: 24px;
+      width: 360px;
+      max-width: calc(100vw - 32px);
+    }
+    .modal-content h2 { margin: 0 0 16px; font-size: 18px; }
+    .modal-content input {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #d4dae3;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* Mobile menu — only visible at narrow widths */
+    .mobile-menu { display: none; }
+    @media (max-width: 800px) {
+      .layout { flex-direction: column; }
+      aside.filters-sidebar { display: none; }
+      .mobile-menu {
+        display: inline-flex;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid #d4dae3;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+    }
+    @media (max-width: 599px) {
+      .stats-row { flex-direction: column; }
+      .toolbar { flex-wrap: wrap; }
+      header h1 { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 id="greeting" data-greeting-hour="">Loading…</h1>
+    <div class="header-meta">
+      <span id="today" data-today=""></span>
+      <span id="countdown">Session expires in —</span>
+      <button class="mobile-menu" id="mobile-menu-btn" aria-label="Menu">☰</button>
+      <button id="logout">Log out</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="filters-sidebar">
+      <h3>Filters</h3>
+      <button id="filter-active" data-filter="active">Active only</button>
+      <button id="filter-inactive" data-filter="inactive">Inactive only</button>
+      <button id="filter-all" data-filter="all">All employees</button>
+    </aside>
+
+    <main>
+      <div class="toolbar">
+        <button id="open-modal">Add Employee</button>
+        <button id="refresh" class="secondary">Refresh</button>
+      </div>
+      <div id="status" role="status"></div>
+
+      <div class="stats-row">
+        <div class="card" id="stat-total">
+          <div class="label">Total</div>
+          <div class="value" data-stat-value>0</div>
+        </div>
+        <div class="card" id="stat-active">
+          <div class="label">Active</div>
+          <div class="value" data-stat-value>0</div>
+        </div>
+        <div class="card" id="stat-departments">
+          <div class="label">Departments</div>
+          <div class="value" data-stat-value>0</div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <input id="search" placeholder="Search employees…" autocomplete="off" />
+      </div>
+
+      <ul id="user-list"></ul>
+
+      <div class="iframe-wrapper">
+        <h3>Team Analytics</h3>
+        <iframe id="analytics-iframe" title="Team Analytics" src="about:blank"></iframe>
+      </div>
+    </main>
+  </div>
+
+  <div id="modal" hidden>
+    <div class="modal-content">
+      <h2>Add Employee</h2>
+      <input id="modal-name" placeholder="Full name" />
+      <input id="modal-email" placeholder="Email" />
+      <div class="modal-actions">
+        <button id="modal-close" class="secondary">Cancel</button>
+        <button id="modal-save">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

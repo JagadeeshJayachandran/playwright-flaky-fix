@@ -1,0 +1,7 @@
+[
+  { "id": 1, "department": "Engineering", "status": "Active", "avatar": "AC" },
+  { "id": 2, "department": "Sales", "status": "Active", "avatar": "BS" },
+  { "id": 3, "department": "Engineering", "status": "Inactive", "avatar": "CD" },
+  { "id": 4, "department": "Marketing", "status": "Active", "avatar": "DK" },
+  { "id": 5, "department": "People Ops", "status": "Active", "avatar": "EP" }
+]
