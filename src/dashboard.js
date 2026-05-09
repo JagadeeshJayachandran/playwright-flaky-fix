@@ -3,7 +3,7 @@
 
   const SESSION_TTL_MS = 5_000;
   const REFRESH_INTERVAL_MS = 1_500;
-  const MODAL_HANDLER_ATTACH_DELAY_MS = 500;
+  const MODAL_HANDLER_ATTACH_DELAY_MS = 2_000;
   const IFRAME_LOAD_DELAY_MS = 2_500;
 
   const state = {
@@ -69,7 +69,7 @@
 
     // Some details (department, status, avatar) come from a slower endpoint.
     // Random jitter mimics real network conditions.
-    const jitter = 200 + Math.floor(Math.random() * 400);
+    const jitter = 500 + Math.floor(Math.random() * 500);
     await new Promise((r) => setTimeout(r, jitter));
     const details = await fetchJSON('/api/users-details.json');
     state.details = Object.fromEntries(details.map((d) => [d.id, d]));
