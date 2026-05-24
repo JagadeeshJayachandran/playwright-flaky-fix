@@ -48,6 +48,7 @@ Flaky tests cost engineering teams an average of 6 hours per week per developer.
 ├── docs/                      # Decisions log, architecture notes
 ├── demo/                      # Screen recordings + GIFs
 ├── .github/workflows/ci.yml   # GitHub Actions CI
+├── FLAKINESS-DECK.pptx        # Animated 14-slide deck — click-by-click reveals on each test (YouTube companion)
 └── PORTFOLIO.md               # ← Read this if you're forking for your portfolio
 ```
 

@@ -1,52 +1,82 @@
-# Claude Prompts (Sonnet 4.6 / Opus 4.6 + Playwright MCP)
+# Claude Prompts (Sonnet 4.6 / Opus + Playwright Healer Agent)
 
-> **Filmed setup:** Claude Desktop with the Playwright MCP server enabled. Claude can read files in your repo and run shell commands directly through MCP.
+> **What you'll do:** Stress test Playwright's official Healer agent on 10 flaky tests. Watch where it patches correctly, where it reaches for a band-aid, and how to push it to the root cause.
+>
+> **Filmed setup:** Claude inside VS Code (or Claude Desktop) with the Playwright MCP server enabled. The Healer agent file (`playwright-test-healer.agent.md`) is read by Claude as part of the prompt.
 
 ## Prerequisites
 
-- Claude Desktop or Claude.ai with Pro/Team
-- Playwright MCP server installed: `npm install -g @playwright/mcp` (or via Claude's MCP config UI)
-- This repo cloned locally
+- Playwright 1.56+ installed: `npm install -D @playwright/test@latest`
+- **The Playwright agent files installed:** `npx playwright init-agents --loop=vscode` (creates `.github/agents/` or `.vscode/agents/` with the three `.agent.md` files)
+- **The Playwright MCP server installed AND configured:** `npm install -D @playwright/mcp` + edit your client config — full step-by-step in [MCP_SETUP.md](../MCP_SETUP.md) (60 seconds)
+- This repo cloned locally with the 10 broken tests in `tests/flakiness-suite/`
+- Claude in VS Code (or Claude Desktop with workspace allowed)
 
-## Prompt 1 — Analyze (don't fix yet)
+## What is the Healer agent?
 
-```
-I have 10 failing Playwright tests in this repo. The tests are in /tests/flakiness-suite/.
-Read each test file. Then read the corresponding HTML and JS source under /src/.
-For each failure, tell me:
-1. What flakiness category it is (race condition, dynamic locator, network jitter, time-based, hover/focus, modal timing, animation, viewport, iframe, auth)
-2. What is causing it (root cause, not symptom)
-3. What the fix should be (in one sentence — don't write code yet)
+`playwright-test-healer.agent.md` is one of three agent role-rule files Playwright generates via `init-agents` (Playwright 1.56+). It tells Claude how to behave when fixing failing tests — read traces, identify root causes, prefer resilient patterns over fixed waits, etc.
 
-Don't write the fix yet. Just analyze.
-```
+The other two are the Planner (designs new tests) and Generator (writes them). This workflow only needs the Healer — we already have 10 broken tests to fix.
 
-## Prompt 2 — Fix all 10
+---
+
+## Prompt 1 — Diagnose (don't fix yet)
 
 ```
-Now write the fix for each test.
-Apply the fixes directly to the test files.
-After all 10 fixes are written, run the full suite with: npx playwright test
-If anything still fails, analyze again and re-patch.
+Act as the Orchestrator. Read the rules in @playwright-test-healer.agent.md.
+
+Then for each failing test in tests/flakiness-suite/:
+1. Read the test file
+2. Read the corresponding source in src/
+3. Read the trace from the last test run (test-results/)
+4. As the Healer, identify the root cause of the failure
+5. Output: test filename, flakiness category, root cause (NOT symptom), and the fix you propose in one sentence
+
+Don't write the fix yet. Just diagnose. Stop and wait for my approval.
 ```
 
-## Prompt 3 — Push back on symptom fixes
+## Prompt 2 — Apply fixes
 
 ```
-The waitForTimeout you added is a symptom fix, not a root-cause fix.
-Read the application code at /src/dashboard.html.
-What is the actual race condition?
-Fix it properly — no fixed waits. Use waitForLoadState, waitForResponse, or another resilient pattern.
+Approved. Stay in @playwright-test-healer.agent.md role.
+
+For each test, apply the fix you proposed. Edit the test files in place.
+After all 10 are patched, run: npx playwright test
+Report the results.
 ```
+
+## Prompt 3 — Push back on the band-aid
+
+```
+The waitForTimeout you added to Test 4 is a symptom fix, not the root cause.
+
+Stay in @playwright-test-healer.agent.md role. Re-read src/dashboard.html and src/dashboard.js.
+What is the actual async race condition? Which two operations are competing?
+
+Replace the waitForTimeout with the appropriate Playwright resilient pattern — waitForLoadState, waitForResponse, or waitForFunction. No fixed waits.
+```
+
+---
 
 ## What to expect
 
-Claude will use MCP to read files directly. It will run `npx playwright test` itself when prompted. It will edit files in place. The full sequence runs in 4–6 minutes.
+The Healer agent will:
+- Read each test + source via Playwright MCP
+- Output structured diagnoses
+- Edit files in place when you approve
+- Run `npx playwright test` itself when prompted
 
-If Claude's first fix on Test 4 (the race condition) is `waitForTimeout(5000)` — that is the moment to use Prompt 3. Don't accept the symptom fix.
+**The honest moment:** on Test 4 (the race condition), the Healer's first instinct is usually `waitForTimeout(5000)` — a band-aid. That's the moment to use Prompt 3. **Don't accept the symptom fix.** This is the entire video's trust earner.
+
+If the Healer happens to use a root-cause fix on every test on first try (rare), bias the prompt toward simplicity — *"apply the simplest fix"* — and it will reliably reach for the timeout.
 
 ## Common gotchas
 
-- If MCP isn't responding: restart Claude Desktop, check the MCP server is in the config
-- If Claude refuses to edit files: re-confirm the project folder is added to Claude's allowed directories
-- If the suite hangs: Playwright probably can't find the local server — start it with `npm run dev` first
+- **"Agent file not found":** run `npx playwright init-agents --loop=vscode` first. Confirm the `.agent.md` files exist in `.github/agents/` or `.vscode/agents/`.
+- **MCP not responding:** restart Claude Desktop or VS Code. Confirm the Playwright MCP server is in the config.
+- **Healer refuses to edit files:** check Claude's allowed-directories settings include the project folder.
+- **Suite hangs:** start the dev server first — `npm run dev`. The tests need `http://localhost:3000`.
+
+## The skill this teaches
+
+Knowing when the Healer is right and when to push it. The agent's first instinct on hard cases (especially race conditions) is often a fixed wait — a band-aid. Recognizing this and redirecting toward the root cause is what separates an engineer who *uses* AI tools from one who is *used by* them.

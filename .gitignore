@@ -33,3 +33,7 @@ yarn-error.log*
 # AI tool caches
 .claude/
 .cursor/
+
+# Generated deck renders (source of truth is FLAKINESS-DECK.md; .pptx is committed)
+FLAKINESS-DECK.html
+FLAKINESS-DECK.pdf

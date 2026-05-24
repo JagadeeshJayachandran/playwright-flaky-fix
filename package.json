@@ -4,11 +4,13 @@
   "description": "AI-powered self-healing Playwright test suite that survives 10 categories of flakiness. Multi-LLM compatible (Claude, Codex, Gemini, Cursor).",
   "main": "index.js",
   "scripts": {
+    "setup": "npx playwright install chromium && npx playwright init-agents --loop=vscode",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "dev": "npx http-server src -p 3000 -c-1"
+    "dev": "npx http-server src -p 3000 -c-1",
+    "mcp:verify": "node -e \"console.log('Playwright MCP installed:', require.resolve('@playwright/mcp') ? 'yes' : 'no')\""
   },
   "keywords": [
     "playwright",
@@ -24,6 +26,7 @@
   "license": "MIT",
   "devDependencies": {
     "@playwright/test": "^1.56.0",
+    "@playwright/mcp": "^0.1.0",
     "@types/node": "^20.0.0",
     "http-server": "^14.1.1",
     "typescript": "^5.4.0"
