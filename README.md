@@ -2,7 +2,9 @@
 
 > **Built live in this video:** [📺 Watch the full build →](https://www.youtube.com/watch?v=YOUR_VIDEO_ID) *(link goes live May 17, 2026)*
 >
-> If this is on your screen, you forked the right repo. By the end of this video you'll have a Playwright suite that survives 10 categories of flakiness — race conditions, dynamic locators, network jitter, time-based assertions, hover/focus quirks, modal timing, animation glitches, viewport edge cases, third-party iframe delays, and authentication flakes — with a green CI badge on YOUR GitHub.
+> No prerequisites. Standalone build. The Healer agent gets installed inline in the first 3 minutes of the video.
+>
+> If this is on your screen, you forked the right repo. By the end of this video you'll have a Playwright suite that survives 10 categories of flakiness — race conditions, dynamic locators, network jitter, time-based assertions, hover/focus quirks, modal timing, animation glitches, viewport edge cases, third-party iframe delays, and authentication flakes — with a green CI badge on YOUR GitHub. **And you'll have an honest understanding of where Playwright's Healer agent needs human direction.**
 
 [![CI](https://github.com/YOUR_USERNAME/playwright-flaky-fix/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/playwright-flaky-fix/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,7 +13,9 @@
 
 ## What this project does
 
-An AI-augmented Playwright test suite that uses Claude (or your preferred LLM) to diagnose flakiness at the *root cause* — not the symptom. The repo contains 10 deliberately broken tests covering 10 categories of real-world flakiness, plus the AI prompts that walk through diagnosing and patching each one.
+A stress test of **Playwright's official Healer agent** (`playwright-test-healer.agent.md`) on 10 categories of real-world test flakiness. The repo contains 10 deliberately broken tests, the AI prompts that invoke the Healer to diagnose and patch each one, and the honest reality of where the Healer reaches for a band-aid (`waitForTimeout`) versus the root-cause fix.
+
+**The skill demonstrated:** knowing when to push back when an AI agent applies a symptom fix instead of solving the actual problem. That's a 2026 QA engineering skill recruiters specifically ask about.
 
 ## Demo
 
@@ -52,20 +56,46 @@ Flaky tests cost engineering teams an average of 6 hours per week per developer.
 ```bash
 git clone https://github.com/YOUR_USERNAME/playwright-flaky-fix.git
 cd playwright-flaky-fix
-npm install
-npm test                        # Initially: 10 fail. Follow the video to fix them.
+npm install        # installs Playwright + the @playwright/mcp server in one go
+npm run setup      # installs Chromium browser + the Healer agent rule files
+
+npm test           # Initially: 10 fail. Follow the video to invoke the Healer.
 ```
+
+**That's it.** The repo ships with `.mcp.json` pre-configured at the root, so if you're using Claude in VS Code (filmed setup), the MCP server connects automatically.
+
+### Open the dashboard manually
+
+To poke at the broken app in your browser (separate from running tests):
+
+```bash
+npm run dev        # serves src/ at http://localhost:3000 (Ctrl+C to stop)
+```
+
+Then open [http://localhost:3000/dashboard.html](http://localhost:3000/dashboard.html). You should see:
+
+- A countdown ticking from "Session expires in 5s" — click **Refresh** after it hits 0 to see the auth flake.
+- A user list that fills in employee names first, then department/status pills 500–1000ms later (the race condition).
+- Stat cards that subtly pulse left–right (the animation trap).
+- Hover any row → Edit/Delete reveal; the list auto-refreshes every 1.5s and the menu vanishes (the hover flake).
+- Click **Add Employee** within the first 2s — nothing happens (the modal listener hasn't attached); after 2s it works.
+
+Useful for sanity-checking what each test is observing before you ask the Healer to fix it.
+
+**Using Claude Desktop or Cursor instead?** See [MCP_SETUP.md](./MCP_SETUP.md) Section 2B (Desktop) or 2C (Cursor) for the 30-second client-specific config.
 
 If `npm test` doesn't run on a fresh clone, the project is broken — open an issue.
 
+If `npm run setup` fails on `init-agents`, your Playwright version is too old. Upgrade: `npm install -D @playwright/test@latest`
+
 ## Tech stack
 
-- **Playwright** — for the test framework (resilient locators, auto-waiting)
-- **Claude Sonnet 4.6 + Playwright MCP** — for the AI-assisted diagnosis (filmed setup)
+- **Playwright 1.56+** — for the test framework AND the official Healer agent (`npx playwright init-agents`)
+- **Claude Sonnet 4.6 + Playwright MCP** — for invoking the Healer agent (filmed setup)
 - **GitHub Actions** — for the CI badge
 - **TypeScript** — for the test files
 
-Don't have Claude? See [`prompts/`](./prompts/) — there's a working prompt set for Codex, Gemini, and Cursor too.
+Don't have Claude? See [`prompts/`](./prompts/) — there's a working prompt set for Codex, Gemini, and Cursor too. **All four use Playwright's same Healer agent rules** — just adapted for each LLM's tool-call syntax.
 
 ## What I'd add next
 
