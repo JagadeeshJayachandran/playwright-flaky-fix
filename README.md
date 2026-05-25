@@ -4,123 +4,211 @@
 >
 > No prerequisites. Standalone build. The Healer agent gets installed inline in the first 3 minutes of the video.
 >
-> If this is on your screen, you forked the right repo. By the end of this video you'll have a Playwright suite that survives 10 categories of flakiness — race conditions, dynamic locators, network jitter, time-based assertions, hover/focus quirks, modal timing, animation glitches, viewport edge cases, third-party iframe delays, and authentication flakes — with a green CI badge on YOUR GitHub. **And you'll have an honest understanding of where Playwright's Healer agent needs human direction.**
+> If this is on your screen, you forked the right repo. By the end you'll have a Playwright suite that survives 10 categories of flakiness — race conditions, dynamic locators, network jitter, time-based assertions, hover/focus quirks, modal timing, animation glitches, viewport edge cases, third-party iframe delays, and authentication flakes — with a green CI badge on YOUR GitHub. **And you'll have an honest understanding of where Playwright's Healer agent needs human direction.**
 
-[![CI](https://github.com/YOUR_USERNAME/playwright-flaky-fix/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/playwright-flaky-fix/actions)
+[![CI](https://github.com/JagadeeshJayachandran/playwright-flaky-fix/actions/workflows/ci.yml/badge.svg)](https://github.com/JagadeeshJayachandran/playwright-flaky-fix/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## What this project does
+## What this is
 
-A stress test of **Playwright's official Healer agent** (`playwright-test-healer.agent.md`) on 10 categories of real-world test flakiness. The repo contains 10 deliberately broken tests, the AI prompts that invoke the Healer to diagnose and patch each one, and the honest reality of where the Healer reaches for a band-aid (`waitForTimeout`) versus the root-cause fix.
+10 deliberately broken Playwright tests, one per flakiness category. Your job: use an AI agent (Claude, Codex, Gemini, or Cursor) to **diagnose the root cause of each failure and fix it** — not paper over it with a `waitForTimeout`.
 
-**The skill demonstrated:** knowing when to push back when an AI agent applies a symptom fix instead of solving the actual problem. That's a 2026 QA engineering skill recruiters specifically ask about.
+**The skill this teaches:** knowing when an AI agent's fix is real and when it's a band-aid. The agent will reach for a fixed wait on the hard cases. Recognizing that and pushing back is the actual 2026 QA skill.
 
-## Demo
+The whole thing is a **3-step loop** you repeat until the suite is green:
 
-![Demo](demo/demo.gif)
+```
+  ┌─────────────────────────────────────────────────────────┐
+  │  1. DIAGNOSE → 2. FIX → 3. PUSH BACK on band-aids  ↺      │
+  └─────────────────────────────────────────────────────────┘
+```
 
-*30-second screen recording showing 10 broken tests → AI diagnoses each → 10 green tests passing in CI.*
+---
 
-## Why this exists
+## Step 0 — Set up (one time, ~2 min)
 
-Flaky tests cost engineering teams an average of 6 hours per week per developer. The traditional fix is to add `waitForTimeout()` calls everywhere — which is a band-aid, not a cure. AI-assisted diagnosis can identify the actual race conditions, dynamic locators, and async issues, and patch them with resilient patterns. **This repo is the demo.**
+```bash
+git clone https://github.com/JagadeeshJayachandran/playwright-flaky-fix.git
+cd playwright-flaky-fix
+npm install        # Playwright + http-server
+npm run setup      # installs Chromium + generates the Healer agent files
+```
+
+`npm run setup` runs `npx playwright init-agents --loop=vscode`, which creates the agent rule files (`.github/agents/playwright-test-healer.agent.md` and two others). **Confirm that file exists before continuing** — the healing workflow references it.
+
+> The repo ships with `.mcp.json` pre-configured, so Claude in VS Code connects to the Playwright MCP server automatically. Using Claude Desktop or Cursor? See [MCP_SETUP.md](./MCP_SETUP.md).
+
+---
+
+## Step 1 — Watch all 10 tests fail
+
+```bash
+npm test
+```
+
+You'll get **10 reds**. That's the starting line — each failure is a different category of flakiness. The error messages are real and specific (wrong text, timeout, blown threshold), not generic syntax errors.
+
+**Optional — see the broken app with your own eyes:**
+
+```bash
+npm run dev        # serves the dashboard at http://localhost:3000 (Ctrl+C to stop)
+```
+
+Open [http://localhost:3000/dashboard.html](http://localhost:3000/dashboard.html) and you'll see the flakes live: a list that fills in late, stat cards that pulse, a modal that ignores early clicks, a session that expires after 5 seconds. This is what each test is fighting with.
+
+---
+
+## Step 2 — Pick your AI tool
+
+Every prompt you need is in [`prompts/`](./prompts/), one file per LLM. **Start at [prompts/README.md](./prompts/README.md)** — it's a "choose your LLM" router.
+
+| Your tool | Prompt file |
+|---|---|
+| **Claude** (Sonnet 4.6 / Opus) — *filmed setup* | [prompts/claude.md](./prompts/claude.md) |
+| **OpenAI Codex / GPT-5** | [prompts/codex.md](./prompts/codex.md) |
+| **Gemini Pro / Gemini CLI** | [prompts/gemini.md](./prompts/gemini.md) |
+| **Cursor** (any backend model) | [prompts/cursor.md](./prompts/cursor.md) |
+| Anything else (Llama, Mistral…) | Adapt [prompts/claude.md](./prompts/claude.md) |
+
+The 3-step sequence below is identical across all of them — only the wording and file-reference syntax differ. Open your file and copy the prompts as you go.
+
+---
+
+## Step 3 — Diagnose (don't fix yet)
+
+Paste **Prompt 1** from your LLM's prompt file. It tells the agent to:
+
+1. Read each failing test in `tests/flakiness-suite/`
+2. Read the matching source in `src/`
+3. Read the trace from the last run in `test-results/`
+4. Output, per test: **category · root cause · proposed fix** — in one line each
+
+Stop here and read the diagnoses. This is where you confirm the agent actually *understands* each failure before it touches a single file.
+
+---
+
+## Step 4 — Apply the fixes
+
+Paste **Prompt 2**. The agent patches the test files in place and re-runs `npx playwright test`.
+
+Expect most tests to go green. But "green" is not the same as "fixed correctly" — which is the whole point of the next step.
+
+---
+
+## Step 5 — Push back on the band-aids ⭐
+
+This is the step that matters. On the hard cases — **especially the race condition (test 01)** — the agent's first instinct is usually a fixed wait:
+
+```ts
+await page.waitForTimeout(5000);   // 🩹 makes it pass, doesn't fix it
+```
+
+That's a band-aid. It passes today and breaks under load tomorrow. Paste **Prompt 3** to redirect the agent to the *root cause* — a resilient pattern like `waitForResponse`, `waitForFunction`, or a web-first assertion, with no magic numbers.
+
+**If you only learn one thing from this repo, it's Step 5.** An engineer who *uses* AI tools catches the band-aid. An engineer who is *used by* them ships it.
+
+Repeat Steps 3–5 until every fix is a real one.
+
+---
+
+## Step 6 — Confirm it's genuinely green
+
+```bash
+npm test               # all 10 pass
+npm run test:headed    # pass in a real browser window too (catches timing band-aids)
+```
+
+A real fix passes in **both** headless and headed mode. A band-aid often passes headless and flakes headed — so run both before you trust it. Push to GitHub and watch the CI badge go green.
+
+---
+
+## The 10 categories (your reference while diagnosing)
+
+| # | Test | Why it fails | Root-cause fix |
+|---|------|--------------|----------------|
+| 01 | `race-condition` | Reads the row before the 2nd fetch fills in the data | `waitForResponse('**/users-details.json')` |
+| 02 | `dynamic-locator` | Row ID is render-index-based; changes after a search | Select by user identity, not position |
+| 03 | `network-jitter` | Asserts response < 100 ms; app delays it 500 ms+ | Drop the timing check or use `request().timing()` |
+| 04 | `time-based` | Session expiry is "midnight tonight", not "now + 24h" | Freeze the clock (`page.clock`) or derive expected |
+| 05 | `hover-focus` | Auto-refresh wipes hover state during a 2 s wait | Re-hover before the action / remove the wait |
+| 06 | `modal-timing` | Clicks the button before its handler attaches (2 s) | Wait for readiness (`waitForFunction` / `toPass`) |
+| 07 | `animation` | Asserts position during an infinite CSS pulse | `toHaveScreenshot({ animations: 'disabled' })` |
+| 08 | `viewport` | Sidebar is `display:none` below 800 px | Run filter tests at desktop viewport |
+| 09 | `iframe` | Iframe content loads at 2.5 s; assertion fires at 1.5 s | `contentFrame().waitForLoadState()` |
+| 10 | `auth-flake` | Session token expires 5 s in; test waits 6 s | Mock auth or refresh the token mid-test |
+
+Want a deeper walkthrough of each? See the companion deck **[FLAKINESS-DECK.md](./FLAKINESS-DECK.md)** (renders to slides with Marp; a `.pptx` is included).
+
+---
 
 ## What's in here
 
 ```
 .
-├── src/                       # The deliberately flaky web app being tested
-│   ├── dashboard.html         # Has 10 categories of flakiness baked in
-│   └── dashboard.js
-├── tests/
-│   └── flakiness-suite/       # 10 failing tests (one per category)
-│       ├── 01-race-condition.spec.ts
-│       ├── 02-dynamic-locator.spec.ts
-│       └── ... (8 more)
-├── prompts/                   # ← AI prompts for any LLM you use
-│   ├── README.md              # "Choose your LLM" decision tree
-│   ├── claude.md              # Filmed setup
-│   ├── codex.md               # OpenAI Codex / GPT-5
-│   ├── gemini.md              # Gemini Pro / Gemini CLI
-│   └── cursor.md              # Cursor agent mode
-├── docs/                      # Decisions log, architecture notes
-├── demo/                      # Screen recordings + GIFs
-├── .github/workflows/ci.yml   # GitHub Actions CI
-├── FLAKINESS-DECK.pptx        # Animated 14-slide deck — click-by-click reveals on each test (YouTube companion)
-└── PORTFOLIO.md               # ← Read this if you're forking for your portfolio
+├── src/                       # The deliberately flaky web app under test
+│   ├── dashboard.html         #   10 categories of flakiness baked in
+│   ├── dashboard.js
+│   └── api/                   #   two JSON endpoints (one fast, one slow)
+├── tests/flakiness-suite/     # 10 failing tests — one per category
+│   ├── 01-race-condition.spec.ts
+│   └── ... (9 more)
+├── prompts/                   # ← AI prompts, one file per LLM (start here)
+│   ├── README.md              #   "choose your LLM" router
+│   ├── claude.md  codex.md  gemini.md  cursor.md
+├── .github/                   # CI workflow (+ agents/ after `npm run setup`)
+├── .mcp.json                  # Playwright MCP server config (auto-connects)
+├── MCP_SETUP.md               # per-client MCP setup (Desktop / Cursor)
+├── FLAKINESS-DECK.md / .pptx  # companion slide deck explaining all 10
+└── PORTFOLIO.md               # ← if you're forking this for your portfolio
 ```
 
-## Run it locally
+---
+
+## Reset & re-run
+
+The agent edits your test files. To get back to the pristine 10-red state:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/playwright-flaky-fix.git
-cd playwright-flaky-fix
-npm install        # installs Playwright + the @playwright/mcp server in one go
-npm run setup      # installs Chromium browser + the Healer agent rule files
-
-npm test           # Initially: 10 fail. Follow the video to invoke the Healer.
+git reset --hard && git clean -fd     # discard all fixes, back to broken
+npm test                              # 10 reds again
 ```
 
-**That's it.** The repo ships with `.mcp.json` pre-configured at the root, so if you're using Claude in VS Code (filmed setup), the MCP server connects automatically.
-
-### Open the dashboard manually
-
-To poke at the broken app in your browser (separate from running tests):
+Run a single category while iterating:
 
 ```bash
-npm run dev        # serves src/ at http://localhost:3000 (Ctrl+C to stop)
+npx playwright test 01-race-condition
 ```
 
-Then open [http://localhost:3000/dashboard.html](http://localhost:3000/dashboard.html). You should see:
-
-- A countdown ticking from "Session expires in 5s" — click **Refresh** after it hits 0 to see the auth flake.
-- A user list that fills in employee names first, then department/status pills 500–1000ms later (the race condition).
-- Stat cards that subtly pulse left–right (the animation trap).
-- Hover any row → Edit/Delete reveal; the list auto-refreshes every 1.5s and the menu vanishes (the hover flake).
-- Click **Add Employee** within the first 2s — nothing happens (the modal listener hasn't attached); after 2s it works.
-
-Useful for sanity-checking what each test is observing before you ask the Healer to fix it.
-
-**Using Claude Desktop or Cursor instead?** See [MCP_SETUP.md](./MCP_SETUP.md) Section 2B (Desktop) or 2C (Cursor) for the 30-second client-specific config.
-
-If `npm test` doesn't run on a fresh clone, the project is broken — open an issue.
-
-If `npm run setup` fails on `init-agents`, your Playwright version is too old. Upgrade: `npm install -D @playwright/test@latest`
+---
 
 ## Tech stack
 
-- **Playwright 1.56+** — for the test framework AND the official Healer agent (`npx playwright init-agents`)
-- **Claude Sonnet 4.6 + Playwright MCP** — for invoking the Healer agent (filmed setup)
-- **GitHub Actions** — for the CI badge
-- **TypeScript** — for the test files
+- **Playwright 1.56+** — test framework **and** the official Healer agent (`npx playwright init-agents`)
+- **Claude Sonnet 4.6 + Playwright MCP** — invoking the Healer (filmed setup); Codex / Gemini / Cursor prompts included
+- **GitHub Actions** — the CI badge
+- **TypeScript** — the test files
 
-Don't have Claude? See [`prompts/`](./prompts/) — there's a working prompt set for Codex, Gemini, and Cursor too. **All four use Playwright's same Healer agent rules** — just adapted for each LLM's tool-call syntax.
+---
 
-## What I'd add next
+## Demo
 
-- [ ] Visual regression testing on top of the flakiness fixes
-- [ ] Mobile viewport variants (next episode)
-- [ ] AI-generated test data (Playwright + Claude generates fixtures)
-- [ ] Self-healing locator fallback chains
+![Demo](demo/demo.gif)
+
+*30-second screen recording: 10 broken tests → AI diagnoses each → 10 green tests in CI.*
 
 ## Forking this for YOUR portfolio?
 
-Read [PORTFOLIO.md](./PORTFOLIO.md). It has:
+Read [PORTFOLIO.md](./PORTFOLIO.md) — LinkedIn copy, a résumé bullet, a 60-second interview pitch, and how to make it yours, not a clone.
 
-- The exact LinkedIn post copy you can paste
-- The résumé bullet you can add today
-- A 60-second pitch for interviews
-- How to customize this so it's yours, not a clone
+## Found a bug? Got it working with another LLM?
 
-## Found a bug? Want to contribute?
-
-[Open an issue](https://github.com/YOUR_USERNAME/playwright-flaky-fix/issues) or PR. The first 5 contributors get featured in a future video.
+[Open an issue](https://github.com/JagadeeshJayachandran/playwright-flaky-fix/issues) or add `prompts/<your-llm>.md` in a PR. First 5 contributors get featured in a future video.
 
 ## About me
 
-I'm Jagadeesh — 14 years in QA, currently teaching engineers how to use AI to build better testing systems on YouTube. Every Sunday I ship a new project you can put on your portfolio. By July, you'll have 6 recruiter-grade projects on your GitHub.
+I'm Jagadeesh — 14 years in QA, teaching engineers how to use AI to build better testing systems on YouTube. Every Sunday I ship a new project you can put on your portfolio.
 
 - **YouTube:** [@JagadeeshJayachandran](https://www.youtube.com/@JagadeeshJayachandran)
 - **LinkedIn:** [linkedin.com/in/jagadeesh-jayachandran](https://linkedin.com/in/jagadeesh-jayachandran)
